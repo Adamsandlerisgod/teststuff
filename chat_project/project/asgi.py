@@ -11,9 +11,12 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from django.urls import path  # Add this import
-from project.apps.chat import consumers
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
+# This will set up the necessary Django components before any models are used
+import django
+django.setup()
+from project.apps.chat import consumers
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
@@ -23,3 +26,4 @@ application = ProtocolTypeRouter({
         ])
     ),
 })
+
