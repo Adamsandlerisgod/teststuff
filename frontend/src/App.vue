@@ -1,22 +1,25 @@
 <template>
   <div id="app">
-    <h1>Chat Application</h1>
     <Chat />
   </div>
 </template>
 
 <script>
-import Chat from './components/Chat_Comp/Chat.vue';
+import Chat from './components/Chat_Comp/Chat.vue'; // Correct import path
 
 export default {
-  components: { Chat },
+  name: 'App',
+  components: {
+    Chat,
+  },
 };
 </script>
 
 <style>
 #app {
-  font-family: Arial, sans-serif;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
-  margin-top: 20px;
+  color: #2c3e50;
+  margin-top: 60px;
 }
 </style>
