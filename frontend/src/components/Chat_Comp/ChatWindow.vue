@@ -1,16 +1,17 @@
 <template>
-    <div class="chat-window">
-      <div v-for="(message, index) in messages" :key="index" class="message">
-        <strong>{{ message.user }}:</strong> {{ message.content }}
-      </div>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    props: ['messages'],
-  };
-  </script>
+  <div class="chat-window">
+    <Message v-for="(message, index) in messages" :key="index" :message="message" />
+  </div>
+</template>
+
+<script>
+import Message from './Message.vue';
+
+export default {
+  components: { Message },
+  props: ['messages'],
+};
+</script>
   
   <style scoped>
   .chat-window {

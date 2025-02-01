@@ -7,7 +7,7 @@
 
 <script>
 import ChatWindow from './ChatWindow.vue';
-import { sendMessage } from '../../services/socket';
+import { sendMessage, onMessage } from '../../services/socket';
 
 export default {
   components: { ChatWindow },
@@ -19,11 +19,12 @@ export default {
   },
   mounted() {
     // Listen for incoming messages
-    this.socket = new WebSocket('ws://localhost:8000/ws/chat/');
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+        // Set up the WebSocket connection and listen for incoming messages using onMessage
+        onMessage((data) => {
+      console.log("Received message:", data);
       this.messages.push(data);
-    };
+    });
+
   },
   methods: {
     sendMessage() {

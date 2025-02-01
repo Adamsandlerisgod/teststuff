@@ -27,28 +27,46 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        # Parse the received message
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        print("Received raw text_data:", repr(text_data))  # Debugging: Show raw message
 
-        # Save the message to the database
-        await self.save_message(message)
+        try:
+            text_data_json = json.loads(text_data)
+            message_content = text_data_json.get('message', '')
+            print("Parsed message:", repr(message_content))
+        except json.JSONDecodeError as e:
+            print("JSON Decode Error:", e)
+            return
 
-        # Broadcast the message to the room group
+        if not message_content:
+            print("Empty or malformed message received.")
+            return
+
+        await self.save_message(message_content)
+        # saved_message = await self.save_message(message_content)
+
+        print("Message saved successfully.")
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'chat_message',
-                'message': message
+                # 'type': 'chat_message',
+                # 'message': saved_message
+                'type' : 'chat_message',
+                'message': message_content
             }
         )
 
+
     async def chat_message(self, event):
-        # Send message to WebSocket
-        message = event['message']
+        message = event.get('message', 'ERROR: Missing message')
+        print("Broadcasting message:", repr(message))
+
         await self.send(text_data=json.dumps({
             'message': message
+            # 'content': message['content'],  # Include content in the message
+            # 'user': message['user']  # Include user in the message
         }))
+
 
     async def save_message(self, message):
         # Logic to save the message to the database
@@ -58,5 +76,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def _save_message(self, message):
         # This is a synchronous function to interact with the database
         # Django's ORM is synchronous, so we need to wrap it with database_sync_to_async
-        ChatMessage.objects.create(content=message, string='guest')
+        from django.contrib.auth.models import User
+        guest_user, _ = User.objects.get_or_create(username="guest", defaults={"password": "guestpassword"})
+        print("message in saved message")
+        print(guest_user.username)
+        ChatMessage.objects.create(content=message, user=guest_user)
+
 

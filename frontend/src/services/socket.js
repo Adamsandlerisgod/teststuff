@@ -32,7 +32,14 @@ export const sendMessage = (message) => {
 
 export const onMessage = (callback) => {
   socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    callback(data);
+    console.log('Raw message received:', event.data); // Debugging
+    try {
+      const data = JSON.parse(event.data);
+      console.log('Parsed message:', data);  // Debugging
+      callback(data);
+    } catch (e) {
+      console.error('Error parsing received message:', e);
+    }
   };
 };
+
