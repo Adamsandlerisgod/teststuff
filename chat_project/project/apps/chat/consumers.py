@@ -2,6 +2,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from project.apps.chat.models import ChatMessage 
+from django.contrib.auth.models import User
+
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -41,18 +43,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
             print("Empty or malformed message received.")
             return
 
-        await self.save_message(message_content)
-        # saved_message = await self.save_message(message_content)
+        # await self.save_message(message_content)
+        saved_message = await self.save_message(message_content)
 
         print("Message saved successfully.")
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                # 'type': 'chat_message',
-                # 'message': saved_message
-                'type' : 'chat_message',
-                'message': message_content
+                'type': 'chat_message',
+                'message': {
+                    'id': saved_message.id,
+                    'content': saved_message.content,
+                    'user': saved_message.user.username,
+                    'timestamp': saved_message.timestamp.isoformat(),
+                # 'message': message_content
+                }
             }
         )
 
@@ -67,19 +73,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # 'user': message['user']  # Include user in the message
         }))
 
-
-    async def save_message(self, message):
-        # Logic to save the message to the database
-        # Assuming you have a ChatMessage model
-        await database_sync_to_async(self._save_message)(message)
-
-    def _save_message(self, message):
-        # This is a synchronous function to interact with the database
-        # Django's ORM is synchronous, so we need to wrap it with database_sync_to_async
-        from django.contrib.auth.models import User
+    @database_sync_to_async
+    def save_message(self, message):
         guest_user, _ = User.objects.get_or_create(username="guest", defaults={"password": "guestpassword"})
-        print("message in saved message")
-        print(guest_user.username)
-        ChatMessage.objects.create(content=message, user=guest_user)
+        return ChatMessage.objects.create(content=message, user=guest_user)
+
+    # async def save_message(self, message):
+    #     # Logic to save the message to the database
+    #     # Assuming you have a ChatMessage model
+    #     database_sync_to_async(self._save_message)(message)
+
+    # def _save_message(self, message):
+    #     # This is a synchronous function to interact with the database
+    #     # Django's ORM is synchronous, so we need to wrap it with database_sync_to_async
+    #     from django.contrib.auth.models import User
+    #     guest_user, _ = User.objects.get_or_create(username="guest", defaults={"password": "guestpassword"})
+    #     print("message in saved message")
+    #     print(guest_user.username)
+    #     ChatMessage.objects.create(content=message, user=guest_user)
 
 
