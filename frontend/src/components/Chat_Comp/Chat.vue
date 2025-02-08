@@ -29,6 +29,7 @@ export default {
 		newMessage: '',
 		activeUsers: [],
 		blockedUsers: [],
+		currentUser: this.currentUser,
 	};
 	},
 	mounted() {
@@ -40,6 +41,10 @@ export default {
 		else if (data.type === 'chat_message' && !this.blockedUsers.includes(data.message.user)) {
 			this.messages.push(data.message);
 		}
+		else if (data.type === 'user_info') {
+			this.currentUser = data.username; // Set the current user
+			console.log(data.username)
+		}
 	});
 	},
 	methods: {
@@ -50,10 +55,14 @@ export default {
 		}
 	},
 	blockUser(user) {
-		if (!this.blockedUsers.includes(user)) {
-		this.blockedUsers.push(user);
+		if (user == this.currentUser)
+		{
+			alert(`You cannot block yourself: ${user}.`)
 		}
-		alert(`You have blocked ${user}.`);
+		else if (!this.blockedUsers.includes(user)) {
+			this.blockedUsers.push(user);
+			alert(`You have blocked ${user}.`);
+		}
 	},
 	viewProfile(user) {
 		alert(`Viewing profile of ${user}`);
