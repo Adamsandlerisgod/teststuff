@@ -1,21 +1,4 @@
-<!-- <template>
-    <div class="message">
-      <strong>{{ message.user }}:</strong> {{ message.content }}
-      <span class="timestamp">{{ message.timestamp }}</span>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    props: ['message'],
-  };
-  </script>
-  
-  <style scoped>
-  .message {
-    margin-bottom: 10px;
-  }
-  </style> -->
+
   <template>
     <div class="message">
       <strong class="username">{{ message.user }}</strong> 
