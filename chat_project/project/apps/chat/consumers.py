@@ -27,6 +27,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		# Join group and accept connection
 		await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+		# Join a unique group for private messages
+		await self.channel_layer.group_add(f"user_{self.username}", self.channel_name)
+
 		await self.accept()
 
 		#Send user Info
@@ -58,24 +62,69 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			print("JSON Decode Error:", e)
 			return
 
-		if not message_content:
-			print("Empty or malformed message received.")
-			return
+				# Check if message is a direct message (starts with "@username")
+		if message_content.startswith('@'):
+			parts = message_content.split(" ", 1)
+			if len(parts) < 2:
+				print("Malformed DM message.")
+				return
+			recipient_username, dm_content = parts
+			recipient_username = recipient_username[1:]  # Remove '@'
 
-		saved_message = await self.save_message(message_content)
+			# Check if recipient is in active users
+			if recipient_username in active_users:
+				await self.send_direct_message(recipient_username, dm_content)
+			else:
+				await self.send(text_data=json.dumps({
+					'type': 'system_message',
+					'message': f"⚠️ {recipient_username} is not online.",
+				}))
+		else:
+			# Save the message normally
+			saved_message = await self.save_message(message_content)
 
+			# Broadcast the message to the chatroom
+			await self.channel_layer.group_send(
+				self.room_group_name,
+				{
+					'type': 'chat_message',
+					'message': {
+						'id': saved_message.id,
+						'content': saved_message.content,
+						'user': saved_message.user.username,
+						'timestamp': saved_message.timestamp.isoformat(),
+					}
+				}
+			)
+
+	async def send_direct_message(self, recipient_username, message_content):
+		"""Send a direct message to a specific user"""
+		print(f"Sending DM from {self.username} to {recipient_username}")
+
+		# Send to recipient's WebSocket
 		await self.channel_layer.group_send(
-			self.room_group_name,
+			f"user_{recipient_username}",  # Unique private channel
 			{
 				'type': 'chat_message',
 				'message': {
-					'id': saved_message.id,
-					'content': saved_message.content,
-					'user': saved_message.user.username,
-					'timestamp': saved_message.timestamp.isoformat(),
+					'id': None,
+					'content': f"(DM) {message_content}",
+					'user': self.username,
+					'timestamp': None,
 				}
 			}
 		)
+
+		# Send back to sender's WebSocket
+		await self.send(text_data=json.dumps({
+			'type': 'chat_message',
+			'message': {
+				'id': None,
+				'content': f"(DM) {message_content}",
+				'user': self.username,
+				'timestamp': None,
+			}
+		}))
 
 	async def chat_message(self, event):
 		await self.send(text_data=json.dumps({
